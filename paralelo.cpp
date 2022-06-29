@@ -1,9 +1,10 @@
 #include <bits/stdc++.h>
+#include <omp.h>
 using namespace std;
 const int N = 10;
 
 int final_path[N+1];
-bool visited[N];
+bool v[N];
 double final_res = DBL_MAX;
 
 
@@ -36,7 +37,7 @@ double SegundoMinimo(double adj[N][N], int i)
 }
 
 void TSPRec(double adj[N][N], double curr_bound, double curr_weight,
-			int level, int curr_path[])
+			int level, int curr_path[],bool visited[])
 {
 
 	if (level==N)
@@ -84,13 +85,13 @@ void TSPRec(double adj[N][N], double curr_bound, double curr_weight,
 				visited[i] = true;
 
 				TSPRec(adj, curr_bound, curr_weight, level+1,
-					curr_path);
+					curr_path,visited);
 			}
 
 			curr_weight -= adj[curr_path[level-1]][i];
 			curr_bound = temp;
 
-			memset(visited, false, sizeof(visited));
+			memset(visited, false, sizeof(v));
 			for (int j=0; j<=level-1; j++)
 				visited[curr_path[j]] = true;
 		}
@@ -101,7 +102,18 @@ void TSPRec(double adj[N][N], double curr_bound, double curr_weight,
 
 void TSP(double adj[N][N])
 {
-	int curr_path[N+1];
+
+
+	#pragma omp parallel for num_threads(10)
+	for(int i=1; i<N;i++)
+	{
+				#pragma omp critical
+{
+		cout<<omp_get_thread_num()<<" "<<i<<endl;
+}
+			int curr_path[N+1];
+	bool visited[N];
+
 
 	double curr_bound = 0;
 	memset(curr_path, -1, sizeof(curr_path));
@@ -115,21 +127,15 @@ void TSP(double adj[N][N])
 	
 	
 	curr_path[0] = 0;
-	/*
-	TSPRec(adj, curr_bound, 0, 1, curr_path);
-	*/
-
-	cout<<curr_bound<<endl;
-	#pragma omp parallel for num_threads(1) firstprivate(curr_bound,visited,curr_path)
-	for(int i=1; i<N;i++)
-	{
 			double temp = curr_bound;
 						curr_bound -= ((Minimo(adj, curr_path[0]) +
 							Minimo(adj, i))/2);
 		visited[i]=true;
 		curr_path[1] = i;
-		TSPRec(adj,curr_bound,adj[0][i],2,curr_path);
+		TSPRec(adj,curr_bound,adj[0][i],2,curr_path,visited);
 			curr_bound = temp;
+		visited[i]=false;
+
 
 	}
 	/*
