@@ -55,6 +55,7 @@ void TSPRec(double adj[N][N], double curr_bound, double curr_weight,
 		            final_path[i] = curr_path[i];
 	            final_path[N] = curr_path[0];
 				final_res = curr_res;
+				
 			}
 		}
 		return;
@@ -68,9 +69,11 @@ void TSPRec(double adj[N][N], double curr_bound, double curr_weight,
 			double temp = curr_bound;
 			curr_weight += adj[curr_path[level-1]][i];
 
-			if (level==1)
+			if (level==1){
 			curr_bound -= ((Minimo(adj, curr_path[level-1]) +
 							Minimo(adj, i))/2);
+			
+			}
 			else
 			curr_bound -= ((SegundoMinimo(adj, curr_path[level-1]) +
 							Minimo(adj, i))/2);
@@ -108,6 +111,7 @@ void TSP(double adj[N][N])
 	curr_bound = curr_bound/2;
 	visited[0] = true;
 	curr_path[0] = 0;
+	
 	TSPRec(adj, curr_bound, 0, 1, curr_path);
 	/*
 		#pragma dsa,das

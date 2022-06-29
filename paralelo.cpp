@@ -1,5 +1,4 @@
 #include <bits/stdc++.h>
-#include <omp.h>
 using namespace std;
 const int N = 10;
 
@@ -46,38 +45,41 @@ void TSPRec(double adj[N][N], double curr_bound, double curr_weight,
 			ser accedida por un proceso a la vez
 			critial section
 		*/
-		if (adj[curr_path[level-1]][curr_path[0]] != 0)
-		{
-			double curr_res = curr_weight +
-					adj[curr_path[level-1]][curr_path[0]];
-			if (curr_res < final_res)
+
+			if (adj[curr_path[level-1]][curr_path[0]] != 0)
 			{
-                for (int i=0; i<N; i++)
-		            final_path[i] = curr_path[i];
-	            final_path[N] = curr_path[0];
-				final_res = curr_res;
+				double curr_res = curr_weight +
+						adj[curr_path[level-1]][curr_path[0]];
+				#pragma omp critical
+				{
+					if (curr_res < final_res)
+					{
+						for (int i=0; i<N; i++)
+							final_path[i] = curr_path[i];
+						final_path[N] = curr_path[0];
+						final_res = curr_res;
+					}
+				}
 			}
-		}
-		return;
 	}
+	else{
 
 	for (int i=0; i<N; i++)
 	{
 		if (adj[curr_path[level-1]][i] != 0 &&
 			visited[i] == false)
 		{
+
 			double temp = curr_bound;
 			curr_weight += adj[curr_path[level-1]][i];
 
-			if (level==1)
-			curr_bound -= ((Minimo(adj, curr_path[level-1]) +
-							Minimo(adj, i))/2);
-			else
 			curr_bound -= ((SegundoMinimo(adj, curr_path[level-1]) +
 							Minimo(adj, i))/2);
+	//cout<<curr_bound<<" "<<curr_weight<<" < "<<final_res <<endl;
 
 			if (curr_bound + curr_weight < final_res)
 			{
+
 				curr_path[level] = i;
 				visited[i] = true;
 
@@ -93,6 +95,8 @@ void TSPRec(double adj[N][N], double curr_bound, double curr_weight,
 				visited[curr_path[j]] = true;
 		}
 	}
+	}
+
 }
 
 void TSP(double adj[N][N])
@@ -108,12 +112,26 @@ void TSP(double adj[N][N])
 
 	curr_bound = curr_bound/2;
 	visited[0] = true;
+	
+	
 	curr_path[0] = 0;
+	/*
 	TSPRec(adj, curr_bound, 0, 1, curr_path);
-    #pragma omp parallel for num_threads(4) private(visited,curr_path,curr_bound)
-    {
-        cout<<"hola"<<omp_get_thread_num()<<endl;
-    }
+	*/
+
+	cout<<curr_bound<<endl;
+	#pragma omp parallel for num_threads(1) firstprivate(curr_bound,visited,curr_path)
+	for(int i=1; i<N;i++)
+	{
+			double temp = curr_bound;
+						curr_bound -= ((Minimo(adj, curr_path[0]) +
+							Minimo(adj, i))/2);
+		visited[i]=true;
+		curr_path[1] = i;
+		TSPRec(adj,curr_bound,adj[0][i],2,curr_path);
+			curr_bound = temp;
+
+	}
 	/*
 		#pragma dsa,das
 			for i < n
